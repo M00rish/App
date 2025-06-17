@@ -36,9 +36,13 @@ type AssigneeStepProps = {
 
     /** Selected feed */
     feed: OnyxTypes.CompanyCardFeed;
+
+    onNext: (nextStep: string) => void;
+    onBack: () => void;
+    onClose: () => void;
 };
 
-function AssigneeStep({policy, feed}: AssigneeStepProps) {
+function AssigneeStep({policy, feed, onNext, onBack, onClose}: AssigneeStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {isOffline} = useNetwork();
@@ -66,6 +70,7 @@ function AssigneeStep({policy, feed}: AssigneeStepProps) {
                 currentStep: isEditing ? CONST.COMPANY_CARD.STEP.CONFIRMATION : nextStep,
                 isEditing: false,
             });
+            onNext(nextStep);
             return;
         }
 
@@ -87,11 +92,13 @@ function AssigneeStep({policy, feed}: AssigneeStepProps) {
             data.encryptedCardNumber = Object.values(filteredCardList).at(0);
         }
 
+        
         setAssignCardStepAndData({
             currentStep: isEditing ? CONST.COMPANY_CARD.STEP.CONFIRMATION : nextStep,
             data,
             isEditing: false,
         });
+        onNext(nextStep);
     };
 
     const handleBackButtonPress = () => {
@@ -102,7 +109,8 @@ function AssigneeStep({policy, feed}: AssigneeStepProps) {
             });
             return;
         }
-        Navigation.goBack();
+        // Navigation.goBack();
+        onBack();
     };
 
     const shouldShowSearchInput = policy?.employeeList && Object.keys(policy.employeeList).length >= MINIMUM_MEMBER_TO_SHOW_SEARCH;

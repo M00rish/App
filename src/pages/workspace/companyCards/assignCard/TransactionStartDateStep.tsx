@@ -23,9 +23,12 @@ type TransactionStartDateStepProps = {
     policyID: string | undefined;
     feed: CompanyCardFeed;
     backTo?: Route;
+    onNext: (nextStep: string) => void;
+    onBack: () => void;
+    onClose: () => void;
 };
 
-function TransactionStartDateStep({policyID, feed, backTo}: TransactionStartDateStepProps) {
+function TransactionStartDateStep({policyID, feed, backTo,onNext, onBack, onClose}: TransactionStartDateStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
@@ -43,9 +46,11 @@ function TransactionStartDateStep({policyID, feed, backTo}: TransactionStartDate
                 currentStep: CONST.COMPANY_CARD.STEP.CONFIRMATION,
                 isEditing: false,
             });
+            onNext(CONST.COMPANY_CARD.STEP.CONFIRMATION);
             return;
         }
         setAssignCardStepAndData({currentStep: CONST.COMPANY_CARD.STEP.CARD});
+        onBack();
     };
 
     const handleSelectDateOption = (dateOption: string) => {
@@ -63,6 +68,7 @@ function TransactionStartDateStep({policyID, feed, backTo}: TransactionStartDate
             },
             isEditing: false,
         });
+        onNext(CONST.COMPANY_CARD.STEP.CONFIRMATION);
     };
 
     const dateOptions = useMemo(
