@@ -24,6 +24,7 @@ import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import type {CompanyCardFeed} from '@src/types/onyx';
 import type {AssignCardStep} from '@src/types/onyx/AssignCard';
+import useHandleBackButton from '@hooks/useHandleBackButton/index.android';
 
 type ConfirmationStepProps = {
     /** Current policy id */
@@ -94,6 +95,12 @@ function ConfirmationStep({policyID, backTo}: ConfirmationStepProps) {
     const handleBackButtonPress = () => {
         setAssignCardStepAndData({currentStep: CONST.COMPANY_CARD.STEP.TRANSACTION_START_DATE});
     };
+
+    useHandleBackButton(() => {
+            handleBackButtonPress();
+            return true;
+    });
+    
 
     return (
         <InteractiveStepWrapper
