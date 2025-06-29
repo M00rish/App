@@ -15,6 +15,7 @@ import useBottomSafeSafeAreaPaddingStyle from '@hooks/useBottomSafeSafeAreaPaddi
 import useCardFeeds from '@hooks/useCardFeeds';
 import useCardsList from '@hooks/useCardsList';
 import useEnvironment from '@hooks/useEnvironment';
+import useHandleBackButton from '@hooks/useHandleBackButton/index.android';
 import useLocalize from '@hooks/useLocalize';
 import useThemeIllustrations from '@hooks/useThemeIllustrations';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -27,7 +28,6 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {CompanyCardFeed} from '@src/types/onyx';
-import useHandleBackButton from '@hooks/useHandleBackButton/index.android';
 
 type CardSelectionStepProps = {
     /** Selected feed */
@@ -72,7 +72,6 @@ function CardSelectionStep({feed, policyID}: CardSelectionStepProps) {
         handleBackButtonPress();
         return true;
     });
-
 
     const handleSelectCard = (cardNumber: string) => {
         setCardSelected(cardNumber);
