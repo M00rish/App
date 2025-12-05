@@ -66,17 +66,37 @@ function TransactionListItem<TItem extends ListItem>({
     const [lastPaymentMethod] = useOnyx(`${ONYXKEYS.NVP_LAST_PAYMENT_METHOD}`, {canBeMissing: true});
 
     const [parentReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(transactionItem.reportID)}`, {canBeMissing: true});
-    const [transactionThreadReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${transactionItem?.reportAction?.childReportID}`, {canBeMissing: true});
     const [transaction] = originalUseOnyx(`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionItem.transactionID}`, {canBeMissing: true});
+    
+    // Fetch the fresh IOU report action from the current report, not from the stale search snapshot
+    // This is important after moving transactions to a new report
     const parentReportActionSelector = useCallback(
-        (reportActions: OnyxEntry<ReportActions>): OnyxEntry<ReportAction> => reportActions?.[`${transactionItem?.moneyRequestReportActionID}`],
-        [transactionItem?.moneyRequestReportActionID],
+        (reportActions: OnyxEntry<ReportActions>): OnyxEntry<ReportAction> => {
+            // First try to find by the moneyRequestReportActionID from the snapshot
+            const actionByID = reportActions?.[`${transactionItem?.moneyRequestReportActionID}`];
+            if (actionByID) {
+                return actionByID;
+            }
+            
+            // If not found, search for the IOU action by transaction ID
+            // This handles the case where the transaction was moved to a new report
+            const actions = Object.values(reportActions ?? {});
+            return actions.find((action) => {
+                const originalMessage = action?.originalMessage as {IOUTransactionID?: string};
+                return originalMessage?.IOUTransactionID === transactionItem.transactionID;
+            });
+        },
+        [transactionItem?.moneyRequestReportActionID, transactionItem.transactionID],
     );
     const [parentReportAction] = originalUseOnyx(
         `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${getNonEmptyStringOnyxID(transactionItem.reportID)}`,
         {selector: parentReportActionSelector, canBeMissing: true},
         [transactionItem],
     );
+    
+    // Use the fresh childReportID from the parent report action, not from the stale snapshot
+    const childReportID = parentReportAction?.childReportID ?? transactionItem?.reportAction?.childReportID;
+    const [transactionThreadReport] = originalUseOnyx(`${ONYXKEYS.COLLECTION.REPORT}${childReportID}`, {canBeMissing: true});
     const currentUserDetails = useCurrentUserPersonalDetails();
     const transactionPreviewData: TransactionPreviewData = useMemo(
         () => ({hasParentReport: !!parentReport, hasTransaction: !!transaction, hasParentReportAction: !!parentReportAction, hasTransactionThreadReport: !!transactionThreadReport}),
@@ -114,9 +134,22 @@ function TransactionListItem<TItem extends ListItem>({
     }, [snapshotPolicy, snapshotReport, transactionItem, violations, currentUserDetails.email, currentUserDetails.accountID]);
 
     const handleActionButtonPress = useCallback(() => {
+        // Create an updated transaction item with FRESH data from Onyx
+        // This ensures we use the correct IOU action ID and child report ID after moving transactions
+        const updatedTransactionItem: TransactionListItemType = {
+            ...transactionItem,
+            // Use the fresh moneyRequestReportActionID from the parent report action
+            // This is critical to prevent duplicate actions when the transaction was moved
+            moneyRequestReportActionID: parentReportAction?.reportActionID ?? transactionItem.moneyRequestReportActionID,
+            reportAction: transactionItem.reportAction ? {
+                ...transactionItem.reportAction,
+                childReportID,
+            } : undefined,
+        } as TransactionListItemType;
+        
         handleActionButtonPressUtil(
             currentSearchHash,
-            transactionItem,
+            updatedTransactionItem,
             () => onSelectRow(item, transactionPreviewData),
             snapshotReport,
             snapshotPolicy,
@@ -124,15 +157,28 @@ function TransactionListItem<TItem extends ListItem>({
             currentSearchKey,
             onDEWModalOpen,
         );
-    }, [currentSearchHash, transactionItem, transactionPreviewData, snapshotReport, snapshotPolicy, lastPaymentMethod, currentSearchKey, onSelectRow, item, onDEWModalOpen]);
+    }, [currentSearchHash, transactionItem, parentReportAction?.reportActionID, childReportID, transactionPreviewData, snapshotReport, snapshotPolicy, lastPaymentMethod, currentSearchKey, onSelectRow, item, onDEWModalOpen]);
 
     const handleCheckboxPress = useCallback(() => {
         onCheckboxPress?.(item);
     }, [item, onCheckboxPress]);
 
     const onPress = useCallback(() => {
-        onSelectRow(item, transactionPreviewData);
-    }, [item, onSelectRow, transactionPreviewData]);
+        // Create an updated item with FRESH data from Onyx
+        // This ensures we use the correct IOU action ID and child report ID after moving transactions
+        const updatedItem = {
+            ...item,
+            // Use the fresh moneyRequestReportActionID from the parent report action
+            // This is critical to prevent duplicate actions when the transaction was moved
+            moneyRequestReportActionID: parentReportAction?.reportActionID ?? transactionItem.moneyRequestReportActionID,
+            reportAction: {
+                ...transactionItem.reportAction,
+                childReportID,
+            },
+        } as TItem;
+        
+        onSelectRow(updatedItem, transactionPreviewData);
+    }, [item, parentReportAction?.reportActionID, transactionItem.reportAction, transactionItem.moneyRequestReportActionID, childReportID, onSelectRow, transactionPreviewData]);
 
     const onLongPress = useCallback(() => {
         onLongPressRow?.(item);
