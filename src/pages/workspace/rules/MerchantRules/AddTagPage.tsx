@@ -3,6 +3,7 @@ import type {ValueOf} from 'type-fest';
 import RuleSelectionBase from '@components/Rule/RuleSelectionBase';
 import useOnyx from '@hooks/useOnyx';
 import {updateDraftMerchantRule} from '@libs/actions/User';
+import {translate} from '@libs/Localize';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -41,7 +42,8 @@ function AddTagPage({route}: AddTagPageProps) {
         return tags;
     }, [tagList?.tags, formTag]);
 
-    const selectedTagItem = tagItems.find(({value}) => value === formTag);
+    const noneItem = useMemo(() => (tagItems.length > 0 ? [{name: `None`, value: ''}] : undefined), [tagItems.length]);
+    const selectedTagItem = tagItems.find(({value}) => value === formTag) ?? noneItem?.at(0);
 
     const backToRoute = isEditing ? ROUTES.RULES_MERCHANT_EDIT.getRoute(policyID, ruleID) : ROUTES.RULES_MERCHANT_NEW.getRoute(policyID);
 
@@ -62,6 +64,7 @@ function AddTagPage({route}: AddTagPageProps) {
             testID="AddTagPage"
             selectedItem={selectedTagItem}
             items={tagItems}
+            pinnedItems={noneItem}
             onSave={onSave}
             onBack={() => Navigation.goBack(backToRoute)}
             backToRoute={backToRoute}

@@ -41,9 +41,11 @@ type RuleSelectionBaseProps = {
 
     /** Optional hash for rule not found validation */
     hash?: string;
+
+    pinnedItems?: SelectionItem[];
 };
 
-function RuleSelectionBase({titleKey, title, testID, selectedItem, items, onSave, onBack, backToRoute, hash}: RuleSelectionBaseProps) {
+function RuleSelectionBase({titleKey, title, testID, selectedItem, pinnedItems, items, onSave, onBack, backToRoute, hash}: RuleSelectionBaseProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -63,6 +65,7 @@ function RuleSelectionBase({titleKey, title, testID, selectedItem, items, onSave
                         backToRoute={backToRoute}
                         initiallySelectedItem={selectedItem}
                         items={items}
+                        pinnedTopItems={pinnedItems}
                         onSaveSelection={onSave}
                         shouldAutoSave
                     />
